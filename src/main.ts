@@ -1,12 +1,13 @@
-import {vec3} from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 const Stats = require('stats-js');
 import * as DAT from 'dat.gui';
+import Cube from './geometry/Cube';
 import Icosphere from './geometry/Icosphere';
 import Square from './geometry/Square';
 import OpenGLRenderer from './rendering/gl/OpenGLRenderer';
 import Camera from './Camera';
-import {setGL} from './globals';
-import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import { setGL } from './globals';
+import ShaderProgram, { Shader } from './rendering/gl/ShaderProgram';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -15,11 +16,14 @@ const controls = {
   'Load Scene': loadScene, // A function pointer, essentially
 };
 
+let cube: Cube;
 let icosphere: Icosphere;
 let square: Square;
 let prevTesselations: number = 5;
 
 function loadScene() {
+  cube = new Cube(vec3.fromValues(0, 0, 0));
+  cube.create();
   icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
   icosphere.create();
   square = new Square(vec3.fromValues(0, 0, 0));
@@ -41,8 +45,8 @@ function main() {
   gui.add(controls, 'Load Scene');
 
   // get canvas and webgl context
-  const canvas = <HTMLCanvasElement> document.getElementById('canvas');
-  const gl = <WebGL2RenderingContext> canvas.getContext('webgl2');
+  const canvas = <HTMLCanvasElement>document.getElementById('canvas');
+  const gl = <WebGL2RenderingContext>canvas.getContext('webgl2');
   if (!gl) {
     alert('WebGL 2 not supported!');
   }
@@ -70,14 +74,14 @@ function main() {
     stats.begin();
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     renderer.clear();
-    if(controls.tesselations != prevTesselations)
-    {
+    if (controls.tesselations != prevTesselations) {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
     }
     renderer.render(camera, lambert, [
-      icosphere,
+      cube
+      // icosphere,
       // square,
     ]);
     stats.end();
@@ -86,7 +90,7 @@ function main() {
     requestAnimationFrame(tick);
   }
 
-  window.addEventListener('resize', function() {
+  window.addEventListener('resize', function () {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
