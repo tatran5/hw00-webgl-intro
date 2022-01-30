@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 const Stats = require('stats-js');
 import * as DAT from 'dat.gui';
 import Cube from './geometry/Cube';
@@ -13,6 +13,9 @@ import ShaderProgram, { Shader } from './rendering/gl/ShaderProgram';
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
   tesselations: 5,
+  red: 1,
+  green: 1,
+  blue: 0,
   'Load Scene': loadScene, // A function pointer, essentially
 };
 
@@ -42,6 +45,9 @@ function main() {
   // Add controls to the gui
   const gui = new DAT.GUI();
   gui.add(controls, 'tesselations', 0, 8).step(1);
+  gui.add(controls, 'red', 0, 1).step(0.1);
+  gui.add(controls, 'green', 0, 1).step(0.1);
+  gui.add(controls, 'blue', 0, 1).step(0.1);
   gui.add(controls, 'Load Scene');
 
   // get canvas and webgl context
@@ -83,7 +89,9 @@ function main() {
       cube
       // icosphere,
       // square,
-    ]);
+    ],
+      vec4.fromValues(controls.red, controls.green, controls.blue, 1)
+    );
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame
