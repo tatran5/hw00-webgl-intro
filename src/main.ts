@@ -86,9 +86,9 @@ function main() {
       icosphere.create();
     }
     renderer.render(camera, lambert, [
-      cube
+      //cube
       // icosphere,
-      // square,
+      square,
     ],
       vec4.fromValues(controls.red, controls.green, controls.blue, 1)
     );
