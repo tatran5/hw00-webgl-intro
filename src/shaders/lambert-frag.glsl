@@ -23,27 +23,22 @@ in vec4 fs_Pos;
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
 
-// Range is [-1, 1]
-float noise1d(int x) {
-    x = (x << 3) ^ x;
-    return (1.0 - float((x * (x * x * 15731 + 789221) 
-        + 1376312589) & 0x7fffffff)) / 10737741824.0;
-}
+float gridWidth = 0.25;
 
 vec3 noise3d(vec3 p) {
-    float nx = noise1d(int(p.x));
-    float ny = noise1d(int(p.y));
-    float nz = noise1d(int(p.z));
-    return vec3(nx, ny, nz);
+  return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),
+												dot(p, vec3(269.5, 183.3, 765.54)),
+												dot(p, vec3(420.69, 631.2, 109.21))))
+					* 42758.5453);
 } 
 
 // Compute the dot product between 
-// - a generated "random" gradient of the first input.
-// - the distance vector between the first input and the second input.
-float influence(vec3 p1, vec3 p2) {
-    vec3 p1Gradient = normalize(noise3d(p1));
-    vec3 distanceV = p2 - p1;
-    return dot(p1Gradient, distanceV);
+// - a generated "random" gradient of the grid point
+// - the distance vector from the grid to the input point
+float influence(vec3 p, vec3 grid) {
+    vec3 gridGradient = normalize(noise3d(grid));
+    vec3 distanceV = p - grid;
+    return dot(gridGradient, distanceV);
 } 
 
 float blend(float x) {
@@ -52,37 +47,64 @@ float blend(float x) {
         10.f * x * x * x;
 }
 
+float fallOff(vec3 p, vec3 grid) {
+	float t = distance(p, grid); // Linear.
+	t = t * t * t * (t * (t * 6.0 - 15.0) + 10.0); // Quintic, 6t^5 - 15t^4 + 10t^3.
+	return 1.0 - t; // Want more weight the closer we are.
+}
+
 // TODO: summarize how perlin noise generates
 float perlinNoise3d(vec3 p) {
-    vec3 floor = vec3(floor(p.x), floor(p.y), floor(p.z));
-    vec3 ceil = floor + vec3(1.f);
+		float xLower = floor(p.x / gridWidth) * gridWidth;
+		float yLower = floor(p.y / gridWidth) * gridWidth;
+		float zLower = floor(p.z / gridWidth) * gridWidth;
+
+		float xUpper = xLower + gridWidth;
+		float yUpper = yLower + gridWidth;
+		float zUpper = zLower + gridWidth;
+
+		// Coordinates of the 8 corners / grid points.
+		vec3 pLBF = vec3(xLower, yLower, zLower);
+    vec3 pLBB = vec3(xLower, yLower, zUpper);
+    vec3 pLTB = vec3(xLower, yUpper, zUpper);
+    vec3 pLTF = vec3(xLower, yUpper, zLower);
+    vec3 pRTF = vec3(xUpper, yUpper, zLower);
+    vec3 pRTB = vec3(xUpper, yUpper, zUpper);
+    vec3 pRBB = vec3(xUpper, yLower, zUpper);
+    vec3 pRBF = vec3(xUpper, yLower, zLower);
 
     // Calculate influence of each lattice point on the input point.
     // Lattice point is each integer point surrounding the input point Because this is 3d, there are 8 points to be calculated
     // as these points make up a cube encapsulating the input.
     // Notation: [L/R (left/right)] [B/T (bottom/top)] [F/B (front/back)]
-    float iLBF = influence(vec3(floor.x, floor.y, floor.z), p);
-    float iLBB = influence(vec3(floor.x, floor.y, ceil.z), p);
-    float iLTB = influence(vec3(floor.x, ceil.y, ceil.z), p);
-    float iLTF = influence(vec3(floor.x, ceil.y, floor.z), p);
-    float iRTF = influence(vec3(ceil.x, ceil.y, floor.z), p);
-    float iRTB = influence(vec3(ceil.x, ceil.y, ceil.z), p);
-    float iRBB = influence(vec3(ceil.x, floor.y, ceil.z), p);
-    float iRBF = influence(vec3(ceil.x, floor.y, floor.z), p);
+    float iLBF = influence(p, pLBF);
+    float iLBB = influence(p, pLBB);
+    float iLTB = influence(p, pLTB);
+    float iLTF = influence(p, pLTF);
+    float iRTF = influence(p, pRTF);
+    float iRTB = influence(p, pRTB);
+    float iRBB = influence(p, pRBB);
+    float iRBF = influence(p, pRBF);
 
-    // Interpolation of p between left and right points on an edge.
-    // Notation: [B/T (bottom/top)] [F/B (front/back)]
-    float iTF = mix(iLTF, iRTF, blend(p.x));
-    float iTB = mix(iLBB, iRBB, blend(p.x));
-    float iBF = mix(iLBF, iRBF, blend(p.x));
-    float iBB = mix(iLBB, iRBB, blend(p.x));
+		// Interpolate weights.
+		float wx = 1.0 - (p.x - xLower) / gridWidth;
+		float wy = 1.0 - (p.y - yLower) / gridWidth;
+		float wz = 1.0 - (p.z - zLower) / gridWidth;
 
-    // Interpolation of p between the points on top front and top back edge.
-    float iT = mix(iTF, iTB, blend(p.z));
-    // Interpolation of p between the points on top front and top back edge.
-    float iB = mix(iBF, iBB, blend(p.z));
+		// Interpolate between left and right influence values.
+		float iTF = mix(iLTF, iRTF, wx);
+		float iBF = mix(iLBF, iRBF, wx);
+		float iTB = mix(iLTB, iRTB, wx);
+		float iBB = mix(iLBB, iRBB, wx);
 
-    return mix(iB, iT, blend(p.y));
+		// Interpolate between top and bottom influence values.
+		float iF = mix(iBF, iTF, wy);
+		float iB = mix(iBB, iTB, wy);
+
+		// Interpolate between front and back influence values.
+		float i = mix(iF, iB, wz);
+
+    return i;
 }
 
 // Fractal Brownian Motion.
@@ -130,5 +152,5 @@ void main()
     // Compute final shaded color
     //out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);
     float noise = perlinNoise3d(fs_Pos.xyz);
-    out_Col = vec4(noise, noise, noise, 1.f);
+		out_Col = vec4(noise, noise, noise, 1.f);
 }
