@@ -50,8 +50,8 @@ function getChosenGeometry(geometryType: GeometryTypes) {
 function addGuiControls(gui: DAT.GUI) {
   gui.add(controls, "tesselations", 0, 8).step(1);
   gui.addColor(controls, "color");
-  gui.add(controls, "geometry", [GeometryTypes.cube, GeometryTypes.square, GeometryTypes.sphere]);
-  gui.add(controls, "shader", [ShaderTypes.lambert, ShaderTypes.perlin]);
+  gui.add(controls, "geometry", Object.values(GeometryTypes));
+  gui.add(controls, "shader", Object.values(ShaderTypes));
 }
 
 /**

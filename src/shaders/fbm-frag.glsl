@@ -83,7 +83,32 @@ float perlinNoise3d(vec3 p) {
 		float i0 = mix(i00, i01, w.y);
 		float i1 = mix(i10, i11, w.y);
 		float i = mix(i0, i1, w.x);
-    return i + 0.2;
+    return i;
+}
+
+// Fractal Brownian Motion.
+float fbm(vec3 p) {
+    float noiseSum = 0.f;
+    // Decay of amplitude as frequency increases.
+    float persistence = 0.5f;
+    // Number of noise functions accounted.
+    int octavesCount = 10;
+    // Influence on the number of "bumps" in a noise function.        
+    float frequency = 1.f;
+    // Influence on the vertical magnitude of the "bumps" in a noise function.
+    float amplitude = 1.f;
+
+    // Loop through the noise functions and sum up the noise.
+    for (int i = 0; i < octavesCount; i++) {
+        // As index i increases, the magnitude decreases (persistence < 1).
+        // Accumulate contributions in total.
+        noiseSum += perlinNoise3d(p);
+
+        // Change the amplitude and frequency to use for the next noise function.
+        amplitude *= persistence;
+        frequency *= 2.f;    
+    }
+    return noiseSum;
 }
 
 void main()
@@ -103,7 +128,6 @@ void main()
                                                         //lit by our point light are not completely black.
 
     // Compute final shaded color
-    //out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);
-    float noise = perlinNoise3d(fs_Pos.xyz);
-		out_Col = vec4(noise, noise, noise, 1.f);
+    float noise = fbm(fs_Pos.xyz);
+	out_Col = vec4(noise, noise, noise, 1.f);
 }
