@@ -9,11 +9,9 @@ export enum ShaderTypes {
 export function getShaderProgram(shaderType: ShaderTypes, gl: WebGL2RenderingContext) : ShaderProgram {
 	switch (shaderType) {
 		case ShaderTypes.lambert:
-			console.log(ShaderTypes.lambert);
 			return getLambertShaderProgram(gl);
 		case ShaderTypes.perlin:
 			console.log(ShaderTypes.perlin);
-			return getPerlinShaderProgram(gl);
 	}
 }
 

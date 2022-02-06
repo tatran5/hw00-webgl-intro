@@ -24,6 +24,8 @@ let cube: Cube;
 let icosphere: Icosphere;
 let square: Square;
 let prevTesselations: number = 5;
+let shaderProgram: ShaderProgram;
+let prevShaderType: ShaderTypes;
 
 function loadScene() {
   cube = new Cube(vec3.fromValues(0, 0, 0));
@@ -67,7 +69,8 @@ function addFramerateDisplay() : any {
 
 function main() {
 	const stats = addFramerateDisplay();
-	addGuiControls(new DAT.GUI());
+	const gui = new DAT.GUI();
+	addGuiControls(gui);
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement>document.getElementById("canvas");
@@ -83,12 +86,11 @@ function main() {
   loadScene();
 
   const camera = new Camera(vec3.fromValues(0, 0, 5), vec3.fromValues(0, 0, 0));
-
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
   gl.enable(gl.DEPTH_TEST);
 
-  const shaderProgram = getShaderProgram(controls.shader, gl);
+  shaderProgram = getShaderProgram(controls.shader, gl);
 
   // This function will be called every frame.
   function tick() {
@@ -100,12 +102,17 @@ function main() {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
-    }
-
+    }	
 		// Normalize color to [0, 1].
 		const color = vec3.fromValues(controls.color[0] / 256.0, 
 			controls.color[1] / 256.0, 
 			controls.color[2] / 256.0);
+
+		
+		if (prevShaderType !== controls.shader) {
+			prevShaderType = controls.shader;
+			shaderProgram = getShaderProgram(controls.shader, gl);
+		}
 
     renderer.render(camera, shaderProgram, [getChosenGeometry(controls.geometry)],
       vec4.fromValues(color[0], color[1], color[2],  1)
@@ -114,6 +121,7 @@ function main() {
 
     // Tell the browser to call `tick` again whenever it renders a new frame.
     requestAnimationFrame(tick);
+		prevShaderType = controls.shader;
   }
 
   window.addEventListener("resize", function () {
