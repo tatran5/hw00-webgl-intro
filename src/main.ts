@@ -9,11 +9,7 @@ import OpenGLRenderer from "./rendering/gl/OpenGLRenderer";
 import Camera from "./Camera";
 import { setGL } from "./globals";
 import ShaderProgram, { Shader } from "./rendering/gl/ShaderProgram";
-
-// import {
-// 	getLambertShaderProgram,
-// 	getPerlinShaderProgram
-// } from "./rendering/gl/ShaderConstants.js";
+import { ShaderTypes, getShaderProgram } from "./rendering/gl/ShaderTypes";
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI"s functions that add GUI elements.
@@ -21,7 +17,7 @@ const controls = {
   tesselations: 5,
 	color: [0, 255, 255],
 	geometry: GeometryTypes.square,
-  "Load Scene": loadScene, // A function pointer, essentially
+	shader: ShaderTypes.lambert
 };
 
 let cube: Cube;
@@ -49,22 +45,29 @@ function getChosenGeometry(geometryType: GeometryTypes) {
 	}
 }
 
-function main() {
-  // Initial display for framerate
-  const stats = Stats();
-  stats.setMode(0);
-  stats.domElement.style.position = "absolute";
-  stats.domElement.style.left = "0px";
-  stats.domElement.style.top = "0px";
-  document.body.appendChild(stats.domElement);
-
-  // Add controls to the gui
-  const gui = new DAT.GUI();
-  gui.add(controls, "tesselations", 0, 8).step(1);
+function addGuiControls(gui: DAT.GUI) {
+	gui.add(controls, "tesselations", 0, 8).step(1);
 	gui.addColor(controls, "color");
 	gui.add(controls, "geometry", [GeometryTypes.cube, GeometryTypes.square, GeometryTypes.sphere]);
-  gui.add(controls, "fragment", []);
-	gui.add(controls, "Load Scene");
+  gui.add(controls, "shader", [ShaderTypes.lambert, ShaderTypes.perlin]);
+}
+
+/**
+ * Add initial display for framerate.
+ */
+function addFramerateDisplay() : any {
+	const stats = Stats();
+	stats.setMode(0);
+	stats.domElement.style.position = "absolute";
+	stats.domElement.style.left = "0px";
+	stats.domElement.style.top = "0px";
+	document.body.appendChild(stats.domElement);
+	return stats;
+}
+
+function main() {
+	const stats = addFramerateDisplay();
+	addGuiControls(new DAT.GUI());
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement>document.getElementById("canvas");
@@ -85,10 +88,7 @@ function main() {
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
   gl.enable(gl.DEPTH_TEST);
 
-  const lambert = new ShaderProgram([
-    new Shader(gl.VERTEX_SHADER, require("./shaders/lambert-vert.glsl")),
-    new Shader(gl.FRAGMENT_SHADER, require("./shaders/lambert-frag.glsl")),
-  ]);
+  const shaderProgram = getShaderProgram(controls.shader, gl);
 
   // This function will be called every frame.
   function tick() {
@@ -107,7 +107,7 @@ function main() {
 			controls.color[1] / 256.0, 
 			controls.color[2] / 256.0);
 
-    renderer.render(camera, lambert, [getChosenGeometry(controls.geometry)],
+    renderer.render(camera, shaderProgram, [getChosenGeometry(controls.geometry)],
       vec4.fromValues(color[0], color[1], color[2],  1)
     );
     stats.end();
