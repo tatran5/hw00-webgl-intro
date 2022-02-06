@@ -15,9 +15,9 @@ import { ShaderTypes, getShaderProgram } from "./rendering/gl/ShaderTypes";
 // This will be referred to by dat.GUI"s functions that add GUI elements.
 const controls = {
   tesselations: 5,
-	color: [0, 255, 255],
-	geometry: GeometryTypes.square,
-	shader: ShaderTypes.lambert
+  color: [0, 255, 255],
+  geometry: GeometryTypes.square,
+  shader: ShaderTypes.lambert
 };
 
 let cube: Cube;
@@ -37,40 +37,40 @@ function loadScene() {
 }
 
 function getChosenGeometry(geometryType: GeometryTypes) {
-	switch(geometryType) {
-		case GeometryTypes.cube:
-			return cube;
-		case GeometryTypes.sphere:
-			return icosphere;
-		case GeometryTypes.square:
-			return square;
-	}
+  switch (geometryType) {
+    case GeometryTypes.cube:
+      return cube;
+    case GeometryTypes.sphere:
+      return icosphere;
+    case GeometryTypes.square:
+      return square;
+  }
 }
 
 function addGuiControls(gui: DAT.GUI) {
-	gui.add(controls, "tesselations", 0, 8).step(1);
-	gui.addColor(controls, "color");
-	gui.add(controls, "geometry", [GeometryTypes.cube, GeometryTypes.square, GeometryTypes.sphere]);
+  gui.add(controls, "tesselations", 0, 8).step(1);
+  gui.addColor(controls, "color");
+  gui.add(controls, "geometry", [GeometryTypes.cube, GeometryTypes.square, GeometryTypes.sphere]);
   gui.add(controls, "shader", [ShaderTypes.lambert, ShaderTypes.perlin]);
 }
 
 /**
  * Add initial display for framerate.
  */
-function addFramerateDisplay() : any {
-	const stats = Stats();
-	stats.setMode(0);
-	stats.domElement.style.position = "absolute";
-	stats.domElement.style.left = "0px";
-	stats.domElement.style.top = "0px";
-	document.body.appendChild(stats.domElement);
-	return stats;
+function addFramerateDisplay(): any {
+  const stats = Stats();
+  stats.setMode(0);
+  stats.domElement.style.position = "absolute";
+  stats.domElement.style.left = "0px";
+  stats.domElement.style.top = "0px";
+  document.body.appendChild(stats.domElement);
+  return stats;
 }
 
 function main() {
-	const stats = addFramerateDisplay();
-	const gui = new DAT.GUI();
-	addGuiControls(gui);
+  const stats = addFramerateDisplay();
+  const gui = new DAT.GUI();
+  addGuiControls(gui);
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement>document.getElementById("canvas");
@@ -94,6 +94,13 @@ function main() {
 
   // This function will be called every frame.
   function tick() {
+    if (prevShaderType !== controls.shader) {
+      prevShaderType = controls.shader;
+      shaderProgram = getShaderProgram(controls.shader, gl);
+      console.log("PROG")
+      console.log(shaderProgram);
+    }
+
     camera.update();
     stats.begin();
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
@@ -102,26 +109,20 @@ function main() {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
-    }	
-		// Normalize color to [0, 1].
-		const color = vec3.fromValues(controls.color[0] / 256.0, 
-			controls.color[1] / 256.0, 
-			controls.color[2] / 256.0);
-
-		
-		if (prevShaderType !== controls.shader) {
-			prevShaderType = controls.shader;
-			shaderProgram = getShaderProgram(controls.shader, gl);
-		}
+    }
+    // Normalize color to [0, 1].
+    const color = vec3.fromValues(controls.color[0] / 256.0,
+      controls.color[1] / 256.0,
+      controls.color[2] / 256.0);
 
     renderer.render(camera, shaderProgram, [getChosenGeometry(controls.geometry)],
-      vec4.fromValues(color[0], color[1], color[2],  1)
+      vec4.fromValues(color[0], color[1], color[2], 1)
     );
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame.
     requestAnimationFrame(tick);
-		prevShaderType = controls.shader;
+    prevShaderType = controls.shader;
   }
 
   window.addEventListener("resize", function () {
