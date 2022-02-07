@@ -23,8 +23,6 @@ in vec4 fs_Pos;
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
 
-float GRID_COUNT_PER_UNIT = 4.0;
-
 // Range: [-1, 1].
 vec3 random3d(vec3 p) {
   // Range of this is from [0, 1];
@@ -57,9 +55,9 @@ float fallOff(vec3 p, vec3 grid) {
 }
 
 // TODO: summarize how perlin noise generates
-float perlinNoise3d(vec3 p) {
+float perlinNoise3d(vec3 p, float frequency) {
 		// Input point in grid space.
-		vec3 pg = GRID_COUNT_PER_UNIT * p;
+		vec3 pg = frequency * p;
 		vec3 g000 = floor(pg);
 
 		vec3 w = blend(fract(pg));
@@ -102,7 +100,7 @@ float fbm(vec3 p) {
     for (int i = 0; i < octavesCount; i++) {
         // As index i increases, the magnitude decreases (persistence < 1).
         // Accumulate contributions in total.
-        noiseSum += perlinNoise3d(p);
+        noiseSum += perlinNoise3d(p, frequency);
 
         // Change the amplitude and frequency to use for the next noise function.
         amplitude *= persistence;
