@@ -97,6 +97,7 @@ function main() {
 		getVertexShader(controls.vertexShader, gl),
 		getFragmentShader(controls.fragmentShader, gl)
 	]);
+	
   // This function will be called every frame.
   function tick() {
 		const isVertexShaderChanged = lastVertexShader !== controls.vertexShader;
