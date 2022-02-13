@@ -103,7 +103,6 @@ void main()
                                                         //lit by our point light are not completely black.
 
     // Compute final shaded color
-    //out_Col = vec4(diffuseColor.rgb * lightIntensity, diffuseColor.a);
     float noise = perlinNoise3d(fs_Pos.xyz);
-		out_Col = vec4(noise, noise, noise, 1.f);
+		out_Col = u_Color * vec4(lightIntensity * vec3(noise), 1.f);
 }

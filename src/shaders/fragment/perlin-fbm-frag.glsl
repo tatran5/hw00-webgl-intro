@@ -127,5 +127,5 @@ void main()
 
     // Compute final shaded color
     float noise = fbm(fs_Pos.xyz);
-	out_Col = vec4(noise, noise, noise, 1.f);
+		out_Col = vec4(lightIntensity * noise * diffuseColor.xyz, diffuseColor.z);
 }
