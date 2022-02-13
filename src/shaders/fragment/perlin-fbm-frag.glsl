@@ -37,9 +37,9 @@ vec3 random3d(vec3 p) {
 // - a generated "random" gradient of the grid point
 // - the distance vector from the grid to the input point
 float influence(vec3 grid, vec3 p) {
-    vec3 gridGradient = normalize(random3d(grid));
-    vec3 distanceV = p - grid;
-    return dot(gridGradient, distanceV);
+	vec3 gridGradient = normalize(random3d(grid));
+	vec3 distanceV = p - grid;
+	return dot(gridGradient, distanceV);
 } 
 
 vec3 blend(vec3 x) {

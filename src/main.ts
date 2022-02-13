@@ -9,15 +9,16 @@ import OpenGLRenderer from "./rendering/gl/OpenGLRenderer";
 import Camera from "./Camera";
 import { setGL } from "./globals";
 import ShaderProgram, { Shader } from "./rendering/gl/ShaderProgram";
-import { ShaderTypes, getShaderProgram } from "./rendering/gl/ShaderTypes";
+import { FragmentShaderTypes, getFragmentShader, getVertexShader, VertexShaderTypes } from "./rendering/gl/ShaderTypes";
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI"s functions that add GUI elements.
 const controls = {
   tesselations: 5,
   color: [0, 255, 255],
-  geometry: GeometryTypes.square,
-  shader: ShaderTypes.lambert
+  geometry: GeometryTypes.cube,
+  vertexShader: VertexShaderTypes.default,
+	fragmentShader: FragmentShaderTypes.lambert
 };
 
 let cube: Cube;
@@ -25,7 +26,8 @@ let icosphere: Icosphere;
 let square: Square;
 let prevTesselations: number = 5;
 let shaderProgram: ShaderProgram;
-let prevShaderType: ShaderTypes;
+let lastVertexShader: VertexShaderTypes = controls.vertexShader;
+let lastFragmentShader: FragmentShaderTypes = controls.fragmentShader;
 
 function loadScene() {
   cube = new Cube(vec3.fromValues(0, 0, 0));
@@ -51,7 +53,8 @@ function addGuiControls(gui: DAT.GUI) {
   gui.add(controls, "tesselations", 0, 8).step(1);
   gui.addColor(controls, "color");
   gui.add(controls, "geometry", Object.values(GeometryTypes));
-  gui.add(controls, "shader", Object.values(ShaderTypes));
+  gui.add(controls, "vertexShader", Object.values(VertexShaderTypes));
+	gui.add(controls, "fragmentShader", Object.values(FragmentShaderTypes));
 }
 
 /**
@@ -90,16 +93,23 @@ function main() {
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
   gl.enable(gl.DEPTH_TEST);
 
-  shaderProgram = getShaderProgram(controls.shader, gl);
-
+  shaderProgram = new ShaderProgram([
+		getVertexShader(controls.vertexShader, gl),
+		getFragmentShader(controls.fragmentShader, gl)
+	]);
   // This function will be called every frame.
   function tick() {
-    if (prevShaderType !== controls.shader) {
-      prevShaderType = controls.shader;
-      shaderProgram = getShaderProgram(controls.shader, gl);
-      console.log("PROG")
-      console.log(shaderProgram);
-    }
+		const isVertexShaderChanged = lastVertexShader !== controls.vertexShader;
+		const isFragmentShaderChanged = lastFragmentShader !== controls.fragmentShader;
+		const isShaderChanged = isVertexShaderChanged || isFragmentShaderChanged;
+		if (isShaderChanged) {
+			lastVertexShader = controls.vertexShader;
+			lastFragmentShader = controls.fragmentShader;
+			shaderProgram = new ShaderProgram([
+				getVertexShader(controls.vertexShader, gl),
+				getFragmentShader(controls.fragmentShader, gl)
+			])
+		}
 
     camera.update();
     stats.begin();
@@ -122,7 +132,6 @@ function main() {
 
     // Tell the browser to call `tick` again whenever it renders a new frame.
     requestAnimationFrame(tick);
-    prevShaderType = controls.shader;
   }
 
   window.addEventListener("resize", function () {

@@ -1,40 +1,33 @@
 
-import ShaderProgram, { Shader } from "./ShaderProgram"
+import { Shader } from "./ShaderProgram"
 
-export enum ShaderTypes {
+export enum FragmentShaderTypes {
 	lambert = "lambert",
 	perlin = "perlin",
-	fbm = "fbm"
+	perlinFbm = "perlin fbm"
 }
 
-export function getShaderProgram(shaderType: ShaderTypes, gl: WebGL2RenderingContext): ShaderProgram {
+export function getFragmentShader(shaderType: FragmentShaderTypes, gl: WebGL2RenderingContext): Shader {
 	switch (shaderType) {
-		case ShaderTypes.lambert:
-			return getLambertShaderProgram(gl);
-		case ShaderTypes.perlin:
-			return getPerlinShaderProgram(gl);
-		case ShaderTypes.fbm:
-			return getFbmShaderProgram(gl);
+		case FragmentShaderTypes.lambert: 
+			return new Shader(gl.FRAGMENT_SHADER, require('../../shaders/fragment/lambert-frag.glsl'));
+		case FragmentShaderTypes.perlin:
+			return new Shader(gl.FRAGMENT_SHADER, require('../../shaders/fragment/perlin-frag.glsl'));
+		case FragmentShaderTypes.perlinFbm:
+			return new Shader(gl.FRAGMENT_SHADER, require('../../shaders/fragment/perlin-fbm-frag.glsl'));
 	}
 }
 
-function getLambertShaderProgram(gl: WebGL2RenderingContext): ShaderProgram {
-	return new ShaderProgram([
-		new Shader(gl.VERTEX_SHADER, require('../../shaders/lambert-vert.glsl')),
-		new Shader(gl.FRAGMENT_SHADER, require('../../shaders/lambert-frag.glsl')),
-	]);
+export enum VertexShaderTypes {
+	default = "default",
+	sin = "sin"
 }
 
-function getPerlinShaderProgram(gl: WebGL2RenderingContext): ShaderProgram {
-	return new ShaderProgram([
-		new Shader(gl.VERTEX_SHADER, require('../../shaders/lambert-vert.glsl')),
-		new Shader(gl.FRAGMENT_SHADER, require('../../shaders/perlin-frag.glsl')),
-	]);
-}
-
-function getFbmShaderProgram(gl: WebGL2RenderingContext): ShaderProgram {
-	return new ShaderProgram([
-		new Shader(gl.VERTEX_SHADER, require('../../shaders/lambert-vert.glsl')),
-		new Shader(gl.FRAGMENT_SHADER, require('../../shaders/fbm-frag.glsl')),
-	]);
+export function getVertexShader(shaderType: VertexShaderTypes, gl: WebGL2RenderingContext): Shader {
+	switch (shaderType) {
+		case VertexShaderTypes.sin:
+			return new Shader(gl.VERTEX_SHADER, require('../../shaders/vertex/sin-vert.glsl'));
+		default: 
+			return new Shader(gl.VERTEX_SHADER, require('../../shaders/vertex/default-vert.glsl'));
+	}
 }

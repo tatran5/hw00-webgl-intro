@@ -30,6 +30,9 @@ class OpenGLRenderer {
     mat4.multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
     prog.setModelMatrix(model);
     prog.setViewProjMatrix(viewProj);
+		
+		const warpedTime = 0.5 + 0.5 * Math.cos(Date.now() / 1000.0);
+		prog.setTime(warpedTime);
     prog.setGeometryColor(color);
 
     for (let drawable of drawables) {
