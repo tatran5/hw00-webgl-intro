@@ -8,31 +8,39 @@ import { GeometryTypes } from "./geometry/GeometryTypes";
 import OpenGLRenderer from "./rendering/gl/OpenGLRenderer";
 import Camera from "./Camera";
 import { setGL } from "./globals";
-import ShaderProgram, { Shader } from "./rendering/gl/ShaderProgram";
-import { FragmentShaderTypes, getFragmentShader, getVertexShader, VertexShaderTypes } from "./rendering/gl/ShaderTypes";
-
-// Define an object with application parameters and button callbacks
-// This will be referred to by dat.GUI"s functions that add GUI elements.
-const controls = {
-  tesselations: 5,
-  color: [0, 255, 255],
-  geometry: GeometryTypes.cube,
-  vertexShader: VertexShaderTypes.default,
-	fragmentShader: FragmentShaderTypes.lambert
-};
+import ShaderProgram from "./rendering/gl/ShaderProgram";
+import { FragmentShaderTypes, getFragmentShader, getVertexShader, isPerlinShader, VertexShaderTypes } from "./rendering/gl/ShaderTypes";
+import { Controls, cloneControls } from "./Controls"
 
 let cube: Cube;
 let icosphere: Icosphere;
 let square: Square;
-let prevTesselations: number = 5;
 let shaderProgram: ShaderProgram;
-let lastVertexShader: VertexShaderTypes = controls.vertexShader;
-let lastFragmentShader: FragmentShaderTypes = controls.fragmentShader;
+
+// Define an object with application parameters and button callbacks
+// This will be referred to by dat.GUI"s functions that add GUI elements.
+const curControls : Controls = {
+	object: {
+		tesselations: 5,
+		geometry: GeometryTypes.cube
+	}, 
+	shading: {
+		color: [0, 255, 255],
+		vertexShader: VertexShaderTypes.default,
+		fragmentShader: FragmentShaderTypes.lambert,
+		// Related to Perlin noise.
+		"grid per unit": 4.0,
+		// Related to fbm.
+		octaves: 10,
+		persistence: 0.5	
+	}
+};
+let lastControls = cloneControls(curControls);
 
 function loadScene() {
   cube = new Cube(vec3.fromValues(0, 0, 0));
   cube.create();
-  icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
+  icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, curControls.object.tesselations);
   icosphere.create();
   square = new Square(vec3.fromValues(0, 0, 0));
   square.create();
@@ -50,11 +58,21 @@ function getChosenGeometry(geometryType: GeometryTypes) {
 }
 
 function addGuiControls(gui: DAT.GUI) {
-  gui.add(controls, "tesselations", 0, 8).step(1);
-  gui.addColor(controls, "color");
-  gui.add(controls, "geometry", Object.values(GeometryTypes));
-  gui.add(controls, "vertexShader", Object.values(VertexShaderTypes));
-	gui.add(controls, "fragmentShader", Object.values(FragmentShaderTypes));
+	const { object, shading } = curControls;
+  gui.add(object, "tesselations", 0, 8).step(1);
+  gui.add(object, "geometry", Object.values(GeometryTypes));
+  gui.addColor(shading, "color");
+  gui.add(shading, "vertexShader", Object.values(VertexShaderTypes));
+	gui.add(shading, "fragmentShader", Object.values(FragmentShaderTypes));
+	if (isPerlinShader(shading.fragmentShader) ) {
+		const perlinFolder = gui.addFolder("Perlin");
+		perlinFolder.add(shading, "grid per unit", 1, 10).step(1);
+		if (shading.fragmentShader === FragmentShaderTypes.perlinFbm) {
+			perlinFolder.add(shading, "octaves", 1, 20).step(1);
+			perlinFolder.add(shading, "persistence", 0.1, 1.0).step(0.1);
+		}
+		perlinFolder.open()
+	}
 }
 
 /**
@@ -70,9 +88,20 @@ function addFramerateDisplay(): any {
   return stats;
 }
 
+/**
+ * Detect whether the control is updated with a new shader value.
+ */
+function hasShaderChanged(): boolean {
+	const curShading = curControls.shading;
+	const lastShading = lastControls.shading;
+	const isFragmentShaderChanged = curShading.fragmentShader !== lastShading.fragmentShader;
+	const isVertexShaderChange = curShading.vertexShader !== lastShading.vertexShader;
+	return isFragmentShaderChanged || isVertexShaderChange;
+}
+
 function main() {
   const stats = addFramerateDisplay();
-  const gui = new DAT.GUI();
+  let gui = new DAT.GUI();
   addGuiControls(gui);
 
   // get canvas and webgl context
@@ -94,41 +123,45 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
 
   shaderProgram = new ShaderProgram([
-		getVertexShader(controls.vertexShader, gl),
-		getFragmentShader(controls.fragmentShader, gl)
+		getVertexShader(curControls.shading.vertexShader, gl),
+		getFragmentShader(curControls.shading.fragmentShader, gl)
 	]);
 	
   // This function will be called every frame.
   function tick() {
-		const isVertexShaderChanged = lastVertexShader !== controls.vertexShader;
-		const isFragmentShaderChanged = lastFragmentShader !== controls.fragmentShader;
-		const isShaderChanged = isVertexShaderChanged || isFragmentShaderChanged;
-		if (isShaderChanged) {
-			lastVertexShader = controls.vertexShader;
-			lastFragmentShader = controls.fragmentShader;
+    stats.begin();
+		if (hasShaderChanged()) {
+			console.log("ShaderChanged")
 			shaderProgram = new ShaderProgram([
-				getVertexShader(controls.vertexShader, gl),
-				getFragmentShader(controls.fragmentShader, gl)
-			])
+				getVertexShader(curControls.shading.vertexShader, gl),
+				getFragmentShader(curControls.shading.fragmentShader, gl)
+			]);
+			gui.destroy()
+			gui = new DAT.GUI();
+  		addGuiControls(gui);
 		}
 
     camera.update();
-    stats.begin();
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     renderer.clear();
-    if (controls.tesselations != prevTesselations) {
-      prevTesselations = controls.tesselations;
-      icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
+
+		const curObject = curControls.object;
+		const lastObject = lastControls.object;
+
+
+    if (curObject.tesselations != lastObject.tesselations) {
+      icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, lastObject.tesselations);
       icosphere.create();
     }
     // Normalize color to [0, 1].
-    const color = vec3.fromValues(controls.color[0] / 256.0,
-      controls.color[1] / 256.0,
-      controls.color[2] / 256.0);
+    const color = vec3.fromValues(curControls.shading.color[0] / 256.0,
+      curControls.shading.color[1] / 256.0,
+      curControls.shading.color[2] / 256.0);
 
-    renderer.render(camera, shaderProgram, [getChosenGeometry(controls.geometry)],
+    renderer.render(camera, shaderProgram, [getChosenGeometry(curControls.object.geometry)],
       vec4.fromValues(color[0], color[1], color[2], 1)
     );
+		lastControls = cloneControls(curControls);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame.

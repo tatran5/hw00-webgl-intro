@@ -7,6 +7,10 @@ export enum FragmentShaderTypes {
 	perlinFbm = "perlin fbm"
 }
 
+export function isPerlinShader(shader: FragmentShaderTypes) {
+	return shader === FragmentShaderTypes.perlin || shader === FragmentShaderTypes.perlinFbm;
+}
+
 export function getFragmentShader(shaderType: FragmentShaderTypes, gl: WebGL2RenderingContext): Shader {
 	switch (shaderType) {
 		case FragmentShaderTypes.lambert: 
