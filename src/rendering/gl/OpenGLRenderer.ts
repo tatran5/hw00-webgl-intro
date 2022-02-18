@@ -4,6 +4,16 @@ import Camera from '../../Camera';
 import { gl } from '../../globals';
 import ShaderProgram from './ShaderProgram';
 
+interface RenderOptions {
+	camera: Camera;
+	shaderProgram: ShaderProgram;
+	drawables: Array<Drawable>;
+	color: vec4;
+	gridCountPerUnit?: number;
+	octaves?: number;
+	persistence?: number;
+}
+
 // In this file, `gl` is accessible because it is imported above
 class OpenGLRenderer {
   constructor(public canvas: HTMLCanvasElement) {
@@ -22,21 +32,27 @@ class OpenGLRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   }
 
-  render(camera: Camera, prog: ShaderProgram, drawables: Array<Drawable>, color: vec4) {
-    let model = mat4.create();
+  render(options: RenderOptions) {
+    const {camera, shaderProgram, drawables, color} = options
+		let model = mat4.create();
     let viewProj = mat4.create();
 
     mat4.identity(model);
     mat4.multiply(viewProj, camera.projectionMatrix, camera.viewMatrix);
-    prog.setModelMatrix(model);
-    prog.setViewProjMatrix(viewProj);
+    shaderProgram.setModelMatrix(model);
+    shaderProgram.setViewProjMatrix(viewProj);
 		
 		const warpedTime = 0.5 + 0.5 * Math.cos(Date.now() / 1000.0);
-		prog.setTime(warpedTime);
-    prog.setGeometryColor(color);
+		shaderProgram.setTime(warpedTime);
+    shaderProgram.setGeometryColor(color);
 
+		if (options.gridCountPerUnit) shaderProgram.setGridPerUnit(options.gridCountPerUnit);
+		if (options.octaves) shaderProgram.setOctaves(options.octaves);
+		if (options.persistence) shaderProgram.setGridPerUnit(options.persistence);
+		
+		
     for (let drawable of drawables) {
-      prog.draw(drawable);
+      shaderProgram.draw(drawable);
     }
   }
 };

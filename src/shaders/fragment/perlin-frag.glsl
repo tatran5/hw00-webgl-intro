@@ -12,6 +12,7 @@
 precision highp float;
 
 uniform vec4 u_Color; // The color with which to render this instance of geometry.
+uniform float u_GridPerUnit;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -22,8 +23,6 @@ in vec4 fs_Pos;
 
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
-
-float GRID_COUNT_PER_UNIT = 4.0;
 
 // Range: [-1, 1].
 vec3 random3d(vec3 p) {
@@ -59,7 +58,7 @@ float fallOff(vec3 p, vec3 grid) {
 // TODO: summarize how perlin noise generates
 float perlinNoise3d(vec3 p) {
 		// Input point in grid space.
-		vec3 pg = GRID_COUNT_PER_UNIT * p;
+		vec3 pg = u_GridPerUnit * p;
 		vec3 g000 = floor(pg);
 
 		vec3 w = blend(fract(pg));

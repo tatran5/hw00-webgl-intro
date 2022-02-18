@@ -18,7 +18,7 @@ export class Shader {
   }
 };
 
-class ShaderProgram {
+export class ShaderProgram {
   prog: WebGLProgram;
 
   attrPos: number;
@@ -30,6 +30,10 @@ class ShaderProgram {
   unifViewProj: WebGLUniformLocation;
   unifColor: WebGLUniformLocation;
 	unifWarpedTime: WebGLUniformLocation;
+
+	unifGridPerUnit: WebGLUniformLocation;
+	unifOctaves: WebGLUniformLocation;
+	unifPersistence: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -49,7 +53,12 @@ class ShaderProgram {
     this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
     this.unifViewProj = gl.getUniformLocation(this.prog, "u_ViewProj");
     this.unifColor = gl.getUniformLocation(this.prog, "u_Color");
-		this.unifWarpedTime = gl.getUniformLocation(this.prog, "u_WarpedTime");
+		this.unifWarpedTime = gl.getUniformLocation(this.prog, "u_WarpedTime");		
+		// Related to perlin.
+		this.unifGridPerUnit = gl.getUniformLocation(this.prog, "u_GridPerUnit");
+		// Related to FBM.
+		this.unifOctaves = gl.getUniformLocation(this.prog, "u_Octaves");
+		this.unifPersistence = gl.getUniformLocation(this.prog, "u_Persistence");
   }
 
   use() {
@@ -91,6 +100,27 @@ class ShaderProgram {
 		this.use();
 		if (this.unifWarpedTime !== -1) {
 			gl.uniform1f(this.unifWarpedTime, warpedTime);
+		}
+	}
+
+	setGridPerUnit(gridPerUnit: number) {
+		this.use();
+		if(this.unifGridPerUnit !== -1) {
+			gl.uniform1f(this.unifGridPerUnit, gridPerUnit);
+		}
+	}
+
+	setOctaves(octaves: number) {
+		this.use();
+		if(this.unifOctaves !== -1) {
+			gl.uniform1f(this.unifOctaves, octaves);
+		}
+	}
+
+	setPersistence(persistence: number) {
+		this.use();
+		if(this.unifPersistence !== -1) {
+			gl.uniform1f(this.unifPersistence, persistence);
 		}
 	}
 

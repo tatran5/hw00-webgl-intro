@@ -8,9 +8,10 @@ import { GeometryTypes } from "./geometry/GeometryTypes";
 import OpenGLRenderer from "./rendering/gl/OpenGLRenderer";
 import Camera from "./Camera";
 import { setGL } from "./globals";
-import ShaderProgram from "./rendering/gl/ShaderProgram";
+import { ShaderProgram } from "./rendering/gl/ShaderProgram";
 import { FragmentShaderTypes, getFragmentShader, getVertexShader, isPerlinShader, VertexShaderTypes } from "./rendering/gl/ShaderTypes";
 import { Controls, cloneControls } from "./Controls"
+import { ShadingControls } from "./rendering/gl/ShadingControls";
 
 let cube: Cube;
 let icosphere: Icosphere;
@@ -91,9 +92,7 @@ function addFramerateDisplay(): any {
 /**
  * Detect whether the control is updated with a new shader value.
  */
-function hasShaderChanged(): boolean {
-	const curShading = curControls.shading;
-	const lastShading = lastControls.shading;
+function hasShaderControlsChanged(curShading: ShadingControls, lastShading: ShadingControls): boolean {
 	const isFragmentShaderChanged = curShading.fragmentShader !== lastShading.fragmentShader;
 	const isVertexShaderChange = curShading.vertexShader !== lastShading.vertexShader;
 	return isFragmentShaderChanged || isVertexShaderChange;
@@ -127,14 +126,18 @@ function main() {
 		getFragmentShader(curControls.shading.fragmentShader, gl)
 	]);
 	
-  // This function will be called every frame.
+  // This function will be ca:lled every frame.
   function tick() {
     stats.begin();
-		if (hasShaderChanged()) {
-			console.log("ShaderChanged")
+		const curShading = curControls.shading;
+		const curObject = curControls.object;
+		const lastShading = lastControls.shading;
+		const lastObject = lastControls.object;
+
+		if (hasShaderControlsChanged(curShading, lastShading)) {
 			shaderProgram = new ShaderProgram([
-				getVertexShader(curControls.shading.vertexShader, gl),
-				getFragmentShader(curControls.shading.fragmentShader, gl)
+				getVertexShader(curShading.vertexShader, gl),
+				getFragmentShader(curShading.fragmentShader, gl)
 			]);
 			gui.destroy()
 			gui = new DAT.GUI();
@@ -145,22 +148,25 @@ function main() {
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     renderer.clear();
 
-		const curObject = curControls.object;
-		const lastObject = lastControls.object;
-
 
     if (curObject.tesselations != lastObject.tesselations) {
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, lastObject.tesselations);
       icosphere.create();
     }
     // Normalize color to [0, 1].
-    const color = vec3.fromValues(curControls.shading.color[0] / 256.0,
-      curControls.shading.color[1] / 256.0,
-      curControls.shading.color[2] / 256.0);
+    const color = vec3.fromValues(curShading.color[0] / 256.0,
+      curShading.color[1] / 256.0,
+      curShading.color[2] / 256.0);
 
-    renderer.render(camera, shaderProgram, [getChosenGeometry(curControls.object.geometry)],
-      vec4.fromValues(color[0], color[1], color[2], 1)
-    );
+    renderer.render({
+			camera, 
+			shaderProgram, 
+			drawables: [getChosenGeometry(curObject.geometry)],
+      color: vec4.fromValues(color[0], color[1], color[2], 1),
+			gridCountPerUnit: curShading["grid per unit"],
+			octaves: curShading.octaves,
+			persistence: curShading.persistence
+		});
 		lastControls = cloneControls(curControls);
     stats.end();
 
