@@ -106,7 +106,6 @@ export class ShaderProgram {
 	setGridPerUnit(gridPerUnit: number) {
 		this.use();
 		if(this.unifGridPerUnit !== -1) {
-			console.log(gridPerUnit)
 			gl.uniform1f(this.unifGridPerUnit, gridPerUnit);
 		}
 	}
@@ -114,7 +113,7 @@ export class ShaderProgram {
 	setOctaves(octaves: number) {
 		this.use();
 		if(this.unifOctaves !== -1) {
-			gl.uniform1f(this.unifOctaves, octaves);
+			gl.uniform1i(this.unifOctaves, octaves);
 		}
 	}
 

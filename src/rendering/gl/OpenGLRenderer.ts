@@ -49,6 +49,7 @@ class OpenGLRenderer {
 		if (options.gridPerUnit) shaderProgram.setGridPerUnit(options.gridPerUnit);
 		if (options.octaves) shaderProgram.setOctaves(options.octaves);
 		if (options.persistence) shaderProgram.setPersistence(options.persistence);
+		console.log(options.persistence)
 		
 		
     for (let drawable of drawables) {

@@ -12,6 +12,9 @@
 precision highp float;
 
 uniform vec4 u_Color; // The color with which to render this instance of geometry.
+uniform int u_Octaves; // Number of noise functions accounted.
+uniform float u_Persistence; // Decay of amplitude as frequency increases.
+uniform float u_GridPerUnit;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -87,23 +90,20 @@ float perlinNoise3d(vec3 p, float frequency) {
 // Fractal Brownian Motion.
 float fbm(vec3 p) {
 	float noiseSum = 0.f;
-	// Decay of amplitude as frequency increases.
 	float persistence = 0.5f;
-	// Number of noise functions accounted.
-	int octavesCount = 10;
 	// Influence on the number of "bumps" in a noise function.        
 	float frequency = 1.f;
 	// Influence on the vertical magnitude of the "bumps" in a noise function.
 	float amplitude = 1.f;
 
 	// Loop through the noise functions and sum up the noise.
-	for (int i = 0; i < octavesCount; i++) {
+	for (int i = 0; i < u_Octaves; i++) {
 		// As index i increases, the magnitude decreases (persistence < 1).
 		// Accumulate contributions in total.
-		noiseSum += perlinNoise3d(p, frequency);
+		noiseSum += amplitude * perlinNoise3d(p, frequency);
 
 		// Change the amplitude and frequency to use for the next noise function.
-		amplitude *= persistence;
+		amplitude *= u_Persistence;
 		frequency *= 2.f;    
 	}
 	return noiseSum;

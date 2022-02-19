@@ -76,14 +76,12 @@ function addGuiControls(gui: DAT.GUI) {
 				fbmFolder.hide();
 				break;
 			case FragmentShaderTypes.perlin:
-				console.log('epe')
+				fbmFolder.hide();
 				perlinFolder.show();
 				perlinFolder.open();
-				fbmFolder.hide();
 				break;
 			case FragmentShaderTypes.perlinFbm:
-				perlinFolder.show();
-				perlinFolder.open();
+				perlinFolder.hide();
 				fbmFolder.show();
 				fbmFolder.open();
 				break;
