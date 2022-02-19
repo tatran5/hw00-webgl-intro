@@ -9,7 +9,7 @@ interface RenderOptions {
 	shaderProgram: ShaderProgram;
 	drawables: Array<Drawable>;
 	color: vec4;
-	gridCountPerUnit?: number;
+	gridPerUnit?: number;
 	octaves?: number;
 	persistence?: number;
 }
@@ -46,9 +46,9 @@ class OpenGLRenderer {
 		shaderProgram.setTime(warpedTime);
     shaderProgram.setGeometryColor(color);
 
-		if (options.gridCountPerUnit) shaderProgram.setGridPerUnit(options.gridCountPerUnit);
+		if (options.gridPerUnit) shaderProgram.setGridPerUnit(options.gridPerUnit);
 		if (options.octaves) shaderProgram.setOctaves(options.octaves);
-		if (options.persistence) shaderProgram.setGridPerUnit(options.persistence);
+		if (options.persistence) shaderProgram.setPersistence(options.persistence);
 		
 		
     for (let drawable of drawables) {

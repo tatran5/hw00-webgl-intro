@@ -10,8 +10,7 @@ import Camera from "./Camera";
 import { setGL } from "./globals";
 import { ShaderProgram } from "./rendering/gl/ShaderProgram";
 import { FragmentShaderTypes, getFragmentShader, getVertexShader, isPerlinShader, VertexShaderTypes } from "./rendering/gl/ShaderTypes";
-import { Controls, cloneControls } from "./Controls"
-import { ShadingControls } from "./rendering/gl/ShadingControls";
+import { Controls } from "./Controls";
 
 let cube: Cube;
 let icosphere: Icosphere;
@@ -21,27 +20,23 @@ let shaderProgram: ShaderProgram;
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI"s functions that add GUI elements.
 const curControls : Controls = {
-	object: {
-		tesselations: 5,
-		geometry: GeometryTypes.cube
-	}, 
-	shading: {
-		color: [0, 255, 255],
-		vertexShader: VertexShaderTypes.default,
-		fragmentShader: FragmentShaderTypes.lambert,
-		// Related to Perlin noise.
-		"grid per unit": 4.0,
-		// Related to fbm.
-		octaves: 10,
-		persistence: 0.5	
-	}
+	tesselations: 5,
+	geometry: GeometryTypes.cube,
+	color: [0, 255, 255],
+	vertexShader: VertexShaderTypes.default,
+	fragmentShader: FragmentShaderTypes.lambert,
+	// Related to Perlin noise.
+	"grid per unit": 4.0,
+	// Related to fbm.
+	octaves: 10,
+	persistence: 0.5
 };
-let lastControls = cloneControls(curControls);
+let lastControls = Object.assign({}, curControls);
 
 function loadScene() {
   cube = new Cube(vec3.fromValues(0, 0, 0));
   cube.create();
-  icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, curControls.object.tesselations);
+  icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, curControls.tesselations);
   icosphere.create();
   square = new Square(vec3.fromValues(0, 0, 0));
   square.create();
@@ -59,22 +54,44 @@ function getChosenGeometry(geometryType: GeometryTypes) {
 }
 
 function addGuiControls(gui: DAT.GUI) {
-	const { object, shading } = curControls;
-  gui.add(object, "tesselations", 0, 8).step(1);
-  gui.add(object, "geometry", Object.values(GeometryTypes));
-  gui.addColor(shading, "color");
-  gui.add(shading, "vertexShader", Object.values(VertexShaderTypes));
-	gui.add(shading, "fragmentShader", Object.values(FragmentShaderTypes));
-	if (isPerlinShader(shading.fragmentShader) ) {
-		const perlinFolder = gui.addFolder("Perlin");
-		perlinFolder.add(shading, "grid per unit", 1, 10).step(1);
-		if (shading.fragmentShader === FragmentShaderTypes.perlinFbm) {
-			perlinFolder.add(shading, "octaves", 1, 20).step(1);
-			perlinFolder.add(shading, "persistence", 0.1, 1.0).step(0.1);
+  gui.add(curControls, "tesselations", 0, 8).step(1);
+  gui.add(curControls, "geometry", Object.values(GeometryTypes));
+  gui.addColor(curControls, "color");
+  gui.add(curControls, "vertexShader", Object.values(VertexShaderTypes));
+	const fragmentShaderController = gui.add(curControls, "fragmentShader", Object.values(FragmentShaderTypes));
+	
+	const perlinFolder = gui.addFolder("Perlin");
+	perlinFolder.add(curControls, "grid per unit", 1, 10).step(1);
+	perlinFolder.hide();
+
+	const fbmFolder = gui.addFolder("Fractal Brownian Motion");
+	fbmFolder.add(curControls, "octaves", 1, 20).step(1);
+	fbmFolder.add(curControls, "persistence", 0.1, 1.0).step(0.1);	
+	fbmFolder.hide();
+
+	fragmentShaderController.onChange((val: FragmentShaderTypes) => {
+		switch (val) {
+			case FragmentShaderTypes.lambert:
+				perlinFolder.hide();
+				fbmFolder.hide();
+				break;
+			case FragmentShaderTypes.perlin:
+				console.log('epe')
+				perlinFolder.show();
+				perlinFolder.open();
+				fbmFolder.hide();
+				break;
+			case FragmentShaderTypes.perlinFbm:
+				perlinFolder.show();
+				perlinFolder.open();
+				fbmFolder.show();
+				fbmFolder.open();
+				break;
 		}
-		perlinFolder.open()
-	}
+	})
+	
 }
+
 
 /**
  * Add initial display for framerate.
@@ -89,13 +106,8 @@ function addFramerateDisplay(): any {
   return stats;
 }
 
-/**
- * Detect whether the control is updated with a new shader value.
- */
-function hasShaderControlsChanged(curShading: ShadingControls, lastShading: ShadingControls): boolean {
-	const isFragmentShaderChanged = curShading.fragmentShader !== lastShading.fragmentShader;
-	const isVertexShaderChange = curShading.vertexShader !== lastShading.vertexShader;
-	return isFragmentShaderChanged || isVertexShaderChange;
+function areShadersEqual(c1: Controls, c2: Controls): boolean {
+	return c1.vertexShader === c2.vertexShader && c1.fragmentShader === c2.fragmentShader;
 }
 
 function main() {
@@ -122,26 +134,19 @@ function main() {
   gl.enable(gl.DEPTH_TEST);
 
   shaderProgram = new ShaderProgram([
-		getVertexShader(curControls.shading.vertexShader, gl),
-		getFragmentShader(curControls.shading.fragmentShader, gl)
+		getVertexShader(curControls.vertexShader, gl),
+		getFragmentShader(curControls.fragmentShader, gl)
 	]);
 	
   // This function will be ca:lled every frame.
   function tick() {
     stats.begin();
-		const curShading = curControls.shading;
-		const curObject = curControls.object;
-		const lastShading = lastControls.shading;
-		const lastObject = lastControls.object;
 
-		if (hasShaderControlsChanged(curShading, lastShading)) {
+		if (!areShadersEqual(curControls, lastControls)) {
 			shaderProgram = new ShaderProgram([
-				getVertexShader(curShading.vertexShader, gl),
-				getFragmentShader(curShading.fragmentShader, gl)
+				getVertexShader(curControls.vertexShader, gl),
+				getFragmentShader(curControls.fragmentShader, gl)
 			]);
-			gui.destroy()
-			gui = new DAT.GUI();
-  		addGuiControls(gui);
 		}
 
     camera.update();
@@ -149,25 +154,25 @@ function main() {
     renderer.clear();
 
 
-    if (curObject.tesselations != lastObject.tesselations) {
-      icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, lastObject.tesselations);
+    if (curControls.tesselations != curControls.tesselations) {
+      icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, curControls.tesselations);
       icosphere.create();
     }
     // Normalize color to [0, 1].
-    const color = vec3.fromValues(curShading.color[0] / 256.0,
-      curShading.color[1] / 256.0,
-      curShading.color[2] / 256.0);
+    const color = vec3.fromValues(curControls.color[0] / 256.0,
+      curControls.color[1] / 256.0,
+      curControls.color[2] / 256.0);
 
     renderer.render({
 			camera, 
 			shaderProgram, 
-			drawables: [getChosenGeometry(curObject.geometry)],
+			drawables: [getChosenGeometry(curControls.geometry)],
       color: vec4.fromValues(color[0], color[1], color[2], 1),
-			gridCountPerUnit: curShading["grid per unit"],
-			octaves: curShading.octaves,
-			persistence: curShading.persistence
+			gridPerUnit: curControls["grid per unit"],
+			octaves: curControls.octaves,
+			persistence: curControls.persistence
 		});
-		lastControls = cloneControls(curControls);
+		lastControls = Object.assign({}, curControls);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame.
