@@ -53,7 +53,7 @@ export class ShaderProgram {
     this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
     this.unifViewProj = gl.getUniformLocation(this.prog, "u_ViewProj");
     this.unifColor = gl.getUniformLocation(this.prog, "u_Color");
-		this.unifWarpedTime = gl.getUniformLocation(this.prog, "u_WarpedTime");		
+		this.unifWarpedTime = gl.getUniformLocation(this.prog, "u_Time");		
 		// Related to perlin.
 		this.unifGridPerUnit = gl.getUniformLocation(this.prog, "u_GridPerUnit");
 		// Related to FBM.
@@ -96,10 +96,10 @@ export class ShaderProgram {
     }
   }
 
-	setTime(warpedTime: number) {
+	setTime(time: number) {
 		this.use();
 		if (this.unifWarpedTime !== -1) {
-			gl.uniform1f(this.unifWarpedTime, warpedTime);
+			gl.uniform1f(this.unifWarpedTime, time);
 		}
 	}
 

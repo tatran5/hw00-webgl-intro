@@ -12,6 +12,7 @@ interface RenderOptions {
 	gridPerUnit?: number;
 	octaves?: number;
 	persistence?: number;
+	tick: number;
 }
 
 // In this file, `gl` is accessible because it is imported above
@@ -33,7 +34,7 @@ class OpenGLRenderer {
   }
 
   render(options: RenderOptions) {
-    const {camera, shaderProgram, drawables, color} = options
+    const {camera, shaderProgram, drawables, color, tick} = options
 		let model = mat4.create();
     let viewProj = mat4.create();
 
@@ -42,15 +43,12 @@ class OpenGLRenderer {
     shaderProgram.setModelMatrix(model);
     shaderProgram.setViewProjMatrix(viewProj);
 		
-		const warpedTime = 0.5 + 0.5 * Math.cos(Date.now() / 1000.0);
-		shaderProgram.setTime(warpedTime);
+		shaderProgram.setTime(tick);
     shaderProgram.setGeometryColor(color);
 
 		if (options.gridPerUnit) shaderProgram.setGridPerUnit(options.gridPerUnit);
 		if (options.octaves) shaderProgram.setOctaves(options.octaves);
 		if (options.persistence) shaderProgram.setPersistence(options.persistence);
-		console.log(options.persistence)
-		
 		
     for (let drawable of drawables) {
       shaderProgram.draw(drawable);

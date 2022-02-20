@@ -32,8 +32,6 @@ out vec4 fs_LightVec;       // The direction in which our virtual light lies, re
 out vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.
 out vec4 fs_Pos;	
 
-uniform float u_WarpedTime; 
-
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
 
@@ -48,7 +46,8 @@ void main()
                                                             // perpendicular to the surface after the surface is transformed by
                                                             // the model matrix.
 
-		vec4 warped_vs_Pos = vs_Pos + vec4(vs_Nor.xyz * sin(u_WarpedTime), 0.0);
+		float warpedTime = 0.5 + 0.5 * cos(0.005 * u_Time);
+		vec4 warped_vs_Pos = vs_Pos + vec4(vs_Nor.xyz * sin(warpedTime), 0.0);
     vec4 modelposition = u_Model * warped_vs_Pos;   // Temporarily store the transformed vertex positions for use below
 
 		fs_LightVec = lightPos - modelposition;  // Compute the direction in which the light source lies

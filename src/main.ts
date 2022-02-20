@@ -136,6 +136,8 @@ function main() {
 		getFragmentShader(curControls.fragmentShader, gl)
 	]);
 	
+	let tickCount = 0;
+	
   // This function will be ca:lled every frame.
   function tick() {
     stats.begin();
@@ -165,13 +167,15 @@ function main() {
 			camera, 
 			shaderProgram, 
 			drawables: [getChosenGeometry(curControls.geometry)],
-      color: vec4.fromValues(color[0], color[1], color[2], 1),
+      color: vec4.fromValues(color[0], color[1], color[2], 1.0),
 			gridPerUnit: curControls["grid per unit"],
 			octaves: curControls.octaves,
-			persistence: curControls.persistence
+			persistence: curControls.persistence,
+			tick: tickCount
 		});
 		lastControls = Object.assign({}, curControls);
-    stats.end();
+		tickCount++;
+		stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame.
     requestAnimationFrame(tick);
