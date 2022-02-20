@@ -24,13 +24,16 @@ export function getFragmentShader(shaderType: FragmentShaderTypes, gl: WebGL2Ren
 
 export enum VertexShaderTypes {
 	default = "default",
-	sin = "sin"
+	sin = "sin",
+	perlinFbm = "perlinFbm"
 }
 
 export function getVertexShader(shaderType: VertexShaderTypes, gl: WebGL2RenderingContext): Shader {
 	switch (shaderType) {
 		case VertexShaderTypes.sin:
 			return new Shader(gl.VERTEX_SHADER, require('../../shaders/vertex/sin-vert.glsl'));
+		case VertexShaderTypes.perlinFbm:
+			return new Shader(gl.VERTEX_SHADER, require('../../shaders/vertex/perlin-fbm-vert.glsl'));
 		default: 
 			return new Shader(gl.VERTEX_SHADER, require('../../shaders/vertex/default-vert.glsl'));
 	}

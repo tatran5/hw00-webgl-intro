@@ -57,39 +57,52 @@ function addGuiControls(gui: DAT.GUI) {
   gui.add(curControls, "tesselations", 0, 8).step(1);
   gui.add(curControls, "geometry", Object.values(GeometryTypes));
   gui.addColor(curControls, "color");
-  gui.add(curControls, "vertexShader", Object.values(VertexShaderTypes));
+  const vertexShaderController = gui.add(curControls, "vertexShader", Object.values(VertexShaderTypes));
 	const fragmentShaderController = gui.add(curControls, "fragmentShader", Object.values(FragmentShaderTypes));
 	
-	const perlinFolder = gui.addFolder("Perlin");
-	perlinFolder.add(curControls, "grid per unit", 1, 10).step(1);
-	perlinFolder.hide();
+	const fbmVertFolder = gui.addFolder("Vertex - Fractal Brownian Motion")
+	fbmVertFolder.add(curControls, "octaves", 1, 20).step(1);
+	fbmVertFolder.add(curControls, "persistence", 0.1, 1.0).step(0.1);	
+	fbmVertFolder.hide();
 
-	const fbmFolder = gui.addFolder("Fractal Brownian Motion");
-	fbmFolder.add(curControls, "octaves", 1, 20).step(1);
-	fbmFolder.add(curControls, "persistence", 0.1, 1.0).step(0.1);	
-	fbmFolder.hide();
+	vertexShaderController.onChange((val: VertexShaderTypes) => {
+		switch (val) {
+			case VertexShaderTypes.perlinFbm:
+				fbmVertFolder.show();
+			default: 
+				fbmVertFolder.hide();
+		}
+	})
+
+	const perlinFragFolder = gui.addFolder("Fragment - Perlin");
+	perlinFragFolder.add(curControls, "grid per unit", 1, 10).step(1);
+	perlinFragFolder.hide();
+
+	const fbmFragFolder = gui.addFolder("Fragment - Fractal Brownian Motion");
+	fbmFragFolder.add(curControls, "octaves", 1, 20).step(1);
+	fbmFragFolder.add(curControls, "persistence", 0.1, 1.0).step(0.1);	
+	fbmFragFolder.hide();
 
 	fragmentShaderController.onChange((val: FragmentShaderTypes) => {
 		switch (val) {
 			case FragmentShaderTypes.lambert:
-				perlinFolder.hide();
-				fbmFolder.hide();
+				perlinFragFolder.hide();
+				fbmFragFolder.hide();
 				break;
 			case FragmentShaderTypes.perlin:
-				fbmFolder.hide();
-				perlinFolder.show();
-				perlinFolder.open();
+				fbmFragFolder.hide();
+				perlinFragFolder.show();
+				perlinFragFolder.open();
 				break;
 			case FragmentShaderTypes.perlinFbm:
-				perlinFolder.hide();
-				fbmFolder.show();
-				fbmFolder.open();
+				perlinFragFolder.hide();
+				fbmFragFolder.show();
+				fbmFragFolder.open();
 				break;
 		}
 	})
 	
 }
-
 
 /**
  * Add initial display for framerate.

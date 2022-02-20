@@ -18,13 +18,10 @@ uniform float u_GridPerUnit;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
-in vec4 fs_Nor;
-in vec4 fs_LightVec;
-in vec4 fs_Col;
-in vec4 fs_Pos;
-
-out vec4 out_Col; // This is the final output color that you will see on your
-                  // screen for the pixel that is currently being processed.
+out vec4 fs_Nor;
+out vec4 fs_LightVec;
+out vec4 fs_Col;
+out vec4 fs_Pos;
 
 // Range: [-1, 1].
 vec3 random3d(vec3 p) {
